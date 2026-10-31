@@ -61,7 +61,7 @@
       text-transform: uppercase;
     }
 
-    select, input[type="file"] {
+    select, input[type="file"], input[type="text"] {
       padding: 8px 10px;
       border: 1px solid #cbd5e1;
       border-radius: 6px;
@@ -276,8 +276,8 @@
     </div>
 
     <div class="form-group">
-      <label>2. Upload Logo Kop (Opsional):</label>
-      <input type="file" id="logoFile" accept="image/*" />
+      <label>2. Tanggal Slip (di atas Bendahara):</label>
+      <input type="text" id="tglInput" value="Alasdowo, 30 Mei 2027" placeholder="contoh: Alasdowo, 30 Mei 2027" oninput="renderPreview(parsedRows)" />
     </div>
 
     <div class="form-group">
@@ -312,7 +312,7 @@
     let uploadedLogoUrl = "https://lh3.googleusercontent.com/d/1ypnFZQcbp4tlOQUHNFvoS4PJuC1a6ctW";
 
     document.getElementById('excelFile').addEventListener('change', handleFileUpload, false);
-    document.getElementById('logoFile').addEventListener('change', handleLogoUpload, false);
+    // logoFile listener removed
 
     function formatNamaBulan(sheetName) {
       if (!sheetName) return "";
@@ -352,22 +352,6 @@
       }
 
       return sheetName.toUpperCase();
-    }
-
-    function handleLogoUpload(e) {
-      const file = e.target.files[0];
-      if (!file) {
-        uploadedLogoUrl = "";
-        renderPreview(parsedRows);
-        return;
-      }
-
-      const reader = new FileReader();
-      reader.onload = function(event) {
-        uploadedLogoUrl = event.target.result;
-        renderPreview(parsedRows);
-      };
-      reader.readAsDataURL(file);
     }
 
     function handleFileUpload(e) {
@@ -433,7 +417,7 @@
           return;
         }
 
-        // SEMUA KOLOM DI ANTARA JUMLAH A DAN JUMLAH B ADALAH TAGIHAN (Ternasuk K.bln.lalu/Wifi/jaminan/jln sehat)
+        // SEMUA KOLOM DI ANTARA JUMLAH A DAN JUMLAH B ADALAH TAGIHAN (Termasuk K.bln.lalu/Wifi/jaminan/jln sehat)
         if (idx > idxNama && idx < idxJumlahA) {
           colsA.push({ index: idx, name: h });
         } else if (idx > idxJumlahA && idx < idxJumlahB) {
@@ -503,10 +487,13 @@
       renderPreview(parsedRows);
     }
 
-    
+    function getTglText() {
+      const inputVal = document.getElementById('tglInput') ? document.getElementById('tglInput').value.trim() : '';
+      return inputVal || 'Alasdowo, 30 Mei 2027';
+    }
+
     function sanitizeLabel(label) {
       if (!label) return '';
-      // Hapus jika di header excel sudah ada penomoran seperti "1." atau "1. " di depan nama kolom
       return String(label).replace(/^[0-9]+[\.\)\-]\s*/, '').trim();
     }
 
@@ -533,124 +520,3 @@
     function filterPerson() {
       const selectedIndex = document.getElementById('personSelect').value;
       if (selectedIndex === 'ALL') {
-        renderPreview(parsedRows);
-      } else {
-        renderPreview([parsedRows[selectedIndex]]);
-      }
-    }
-
-    function renderPreview(dataList) {
-      const container = document.getElementById('previewArea');
-      const warningContainer = document.getElementById('warningContainer');
-      container.innerHTML = '';
-      warningContainer.innerHTML = '';
-
-      let warnings = [];
-
-      dataList.forEach(p => {
-        if (p.totalA !== p.excelTotalA && p.excelTotalA !== 0) {
-          warnings.push(`<b>${p.nama}</b> (Baris ${p.rowNum}): Total Bisyaroh di Excel (Rp ${p.excelTotalA.toLocaleString('id-ID')}) BEDA dengan hasil penjumlahan rincian (Rp ${p.totalA.toLocaleString('id-ID')}).`);
-        }
-        if (p.totalB !== p.excelTotalB && p.excelTotalB !== 0) {
-          warnings.push(`<b>${p.nama}</b> (Baris ${p.rowNum}): Total Tagihan di Excel (Rp ${p.excelTotalB.toLocaleString('id-ID')}) BEDA dengan hasil penjumlahan rincian (Rp ${p.totalB.toLocaleString('id-ID')}).`);
-        }
-        if (p.totalBersih !== p.excelDiterima && p.excelDiterima !== 0) {
-          warnings.push(`<b>${p.nama}</b> (Baris ${p.rowNum}): Jumlah yang Diterima di Excel (Rp ${p.excelDiterima.toLocaleString('id-ID')}) BEDA dengan hasil hitung A - B (Rp ${p.totalBersih.toLocaleString('id-ID')}).`);
-        }
-      });
-
-      if (warnings.length > 0) {
-        warningContainer.innerHTML = `
-          <div class="alert-box">
-            <strong>⚠️ Ditemukan Kesalahan Rumus / Ketik di Excel:</strong>
-            <ul>${warnings.map(w => `<li>${w}</li>`).join('')}</ul>
-          </div>
-        `;
-      }
-
-      if (!dataList || dataList.length === 0) {
-        container.innerHTML = '<div class="no-print">Tidak ada data untuk ditampilkan.</div>';
-        return;
-      }
-
-      let displayBulan = formatNamaBulan(currentSheetName);
-
-      dataList.forEach(p => {
-        const logoImgHtml = uploadedLogoUrl ? `<img src="${uploadedLogoUrl}" class="kop-logo" alt="Logo">` : '';
-
-        const html = `
-          <div class="envelope-card">
-            <div>
-              <div class="kop-container">
-                ${logoImgHtml}
-                <div class="kop-text">
-                  BISYAROH GURU DAN TENAGA KEPENDIDIKAN<br>
-                  MTS. TARBIYATUL BANIN BANAT ALASDOWO<br>
-                  BULAN ${displayBulan}
-                </div>
-              </div>
-
-              <div class="nama-bar">Nama : ${p.nama}</div>
-
-              <div class="grid-container">
-                <!-- KOLOM A -->
-                <div class="col">
-                  <div class="col-content">
-                    <span class="col-title">A. BISYAROH</span>
-                    ${p.itemsA.map((item, idx) => `
-                      <div class="item-row">
-                        <span>${idx + 1}.&nbsp;${sanitizeLabel(item.label)}</span>
-                        <span>Rp ${item.val.toLocaleString('id-ID')}</span>
-                      </div>
-                    `).join('')}
-                  </div>
-                  <div class="subtotal-row">
-                    <span>JUMLAH A</span>
-                    <span>Rp ${p.totalA.toLocaleString('id-ID')}</span>
-                  </div>
-                </div>
-
-                <!-- KOLOM B -->
-                <div class="col">
-                  <div class="col-content">
-                    <span class="col-title">B. TAGIHAN</span>
-                    ${p.itemsB.map((item, idx) => `
-                      <div class="item-row">
-                        <span>${idx + 1}.&nbsp;${sanitizeLabel(item.label)}</span>
-                        <span>Rp ${item.val.toLocaleString('id-ID')}</span>
-                      </div>
-                    `).join('')}
-                  </div>
-                  <div class="subtotal-row">
-                    <span>JUMLAH B</span>
-                    <span>Rp ${p.totalB.toLocaleString('id-ID')}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- BAGIAN BAWAH -->
-            <div class="bottom-section">
-              <div class="total-row">
-                <span>JUMLAH DITERIMA (A - B) :</span>
-                <span>Rp ${p.totalBersih.toLocaleString('id-ID')}</span>
-              </div>
-
-              <div class="ttd-box">
-                Alasdowo, 30 Mei 2027<br>
-                Bendahara
-                <div class="ttd-space">
-                  <img src="https://lh3.googleusercontent.com/d/1jqhPPf5kJZXEObZSr57IXOsy0_krxd1c" style="max-height: 38px; margin-top: 2px;" alt="TTD">
-                </div>
-                <b>Mu'linatussa'adah</b>
-              </div>
-            </div>
-          </div>
-        `;
-
-        container.innerHTML += html;
-      });
-    }
-  </script>
-</body>
-</html>
