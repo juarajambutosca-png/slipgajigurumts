@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aplikasi Slip Bisyaroh Amplop Landscape (152 x 95 mm)</title>
+  <!-- Library SheetJS untuk membaca file Excel -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <style>
+    :root {
+      --primary: #0f172a;
+      --accent: #16a34a;
+      --bg: #f1f5f9;
+      --card-bg: #ffffff;
+      --text: #1e293b;
+      --danger: #dc2626;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background-color: var(--bg);
+      margin: 0;
+      padding: 0;
+      color: var(--text);
+    }
+
+    .top-bar {
+      background: var(--primary);
+      color: white;
+      padding: 12px 20px;
+      text-align: center;
+      font-size: 16px;
+      font-weight: bold;
+    }
+
+    .control-panel {
+      background: white;
+      max-width: 950px;
+      margin: 15px auto;
+      padding: 15px 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+      display: flex;
+      gap: 15px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .form-group label {
+      font-size: 11px;
+      font-weight: 700;
+      color: #64748b;
+      text-transform: uppercase;
+    }
+
+    select, input[type="file"] {
+      padding: 8px 10px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      font-size: 12px;
+      background: #f8fafc;
+    }
+
+    .btn-print {
+      background-color: var(--accent);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      font-weight: bold;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-left: auto;
+      font-size: 13px;
+    }
+
+    .btn-print:hover {
+      background-color: #15803d;
+    }
+
+    #warningContainer {
+      max-width: 950px;
+      margin: 0 auto 15px;
+    }
+
+    .alert-box {
+      background: #fef2f2;
+      border-left: 4px solid var(--danger);
+      padding: 12px 16px;
+      border-radius: 6px;
+      color: #991b1b;
+      font-size: 12px;
+    }
+
+    .alert-box ul {
+      margin: 4px 0 0 18px;
+      padding: 0;
+    }
+
+    #previewArea {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      padding-bottom: 50px;
+    }
+
+    /* KARTU AMPLOP LANDSCAPE 152mm x 95mm PRESI */
+    .envelope-card {
+      width: 152mm;
+      height: 95mm;
+      background: var(--card-bg);
+      padding: 6mm 7mm;
+      border-radius: 4px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      border: 1px solid #cbd5e1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+    }
+
+    .kop-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border-bottom: 2px solid #000;
+      padding-bottom: 4px;
+      margin-bottom: 6px;
+    }
+
+    .kop-logo {
+      max-height: 12mm;
+      max-width: 12mm;
+      object-fit: contain;
+    }
+
+    .kop-text {
+      text-align: center;
+      font-weight: 800;
+      font-size: 9.5pt;
+      line-height: 1.2;
+      text-transform: uppercase;
+      flex-grow: 1;
+    }
+
+    .nama-bar {
+      font-weight: 700;
+      font-size: 9.5pt;
+      margin-bottom: 6px;
+    }
+
+    /* CONTAINER GRID RINCIAN */
+    .grid-container {
+      display: flex;
+      justify-content: space-between;
+      border-top: 1px solid #000;
+      border-bottom: 1px solid #000;
+      padding: 6px 0;
+      font-size: 8.5pt;
+      flex-grow: 1;
+    }
+
+    .col {
+      width: 48%;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .col-content {
+      width: 100%;
+    }
+
+    .col-title {
+      font-weight: bold;
+      margin-bottom: 5px;
+      display: block;
+      border-bottom: 1px dashed #aaa;
+      padding-bottom: 2px;
+    }
+
+    .item-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 4px;
+      line-height: 1.25;
+    }
+
+    .subtotal-row {
+      display: flex;
+      justify-content: space-between;
+      font-weight: bold;
+      border-top: 1px dashed #000;
+      padding-top: 4px;
+      margin-top: 4px;
+    }
+
+    .bottom-section {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      margin-top: 6px;
+    }
+
+    .total-row {
+      font-weight: bold;
+      font-size: 9.5pt;
+      background: #f8fafc;
+      padding: 5px 8px;
+      border: 1px solid #cbd5e1;
+      display: flex;
+      gap: 10px;
+    }
+
+    /* MARGIN TANDA TANGAN RAPI & SEIMBANG */
+    .ttd-box {
+      text-align: left;
+      font-size: 8.5pt;
+      line-height: 1.25;
+      width: 42mm;
+    }
+
+    .ttd-space {
+      height: 28px;
+    }
+
+    /* PENGATURAN CETAK LANDSCAPE PAS AMPLOP */
+    @media print {
+      .no-print {
+        display: none !important;
+      }
+      body {
+        background: white;
+        margin: 0;
+      }
+      #previewArea {
+        padding: 0;
+        gap: 0;
+      }
+      .envelope-card {
+        width: 152mm;
+        height: 95mm;
+        box-shadow: none;
+        border: none;
+        border-radius: 0;
+        padding: 5mm 6mm;
+        page-break-after: always;
+        page-break-inside: avoid;
+      }
+      @page {
+        size: 152mm 95mm landscape;
+        margin: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="top-bar no-print">
+    Generator Slip Bisyaroh Amplop Landscape (152 x 95 mm)
+  </div>
+
+  <div class="control-panel no-print">
+    <div class="form-group">
+      <label>1. Upload Excel:</label>
+      <input type="file" id="excelFile" accept=".xlsx, .xls" />
+    </div>
+
+    <div class="form-group">
+      <label>2. Upload Logo Kop (Opsional):</label>
+      <input type="file" id="logoFile" accept="image/*" />
+    </div>
+
+    <div class="form-group">
+      <label>3. Pilih Bulan / Sheet:</label>
+      <select id="sheetSelect" disabled onchange="processSheet()">
+        <option value="">-- Upload Excel Dulu --</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>4. Filter Guru / Tendik:</label>
+      <select id="personSelect" disabled onchange="filterPerson()">
+        <option value="ALL">-- Tampilkan Semua --</option>
+      </select>
+    </div>
+
+    <button class="btn-print" onclick="window.print()">Cetak / Save PDF</button>
+  </div>
+
+  <div id="warningContainer" class="no-print"></div>
+
+  <div id="previewArea">
+    <div class="no-print" style="color: #64748b; margin-top: 50px; font-size: 14px;">
+      Silakan upload file Excel <b>Bisyaroh Guru dan Tendik</b> untuk melihat preview.
+    </div>
+  </div>
+
+  <script>
+    let globalWorkbook = null;
+    let parsedRows = [];
+    let currentSheetName = "";
+    let uploadedLogoUrl = "https://lh3.googleusercontent.com/d/1ypnFZQcbp4tlOQUHNFvoS4PJuC1a6ctW";
+
+    document.getElementById('excelFile').addEventListener('change', handleFileUpload, false);
+    document.getElementById('logoFile').addEventListener('change', handleLogoUpload, false);
+
+    function formatNamaBulan(sheetName) {
+      if (!sheetName) return "";
+      let s = sheetName.trim();
+      
+      s = s.replace(/\./g, ' ');
+      let parts = s.split(/\s+/);
+      
+      if (parts.length >= 2) {
+        let bln = parts[0];
+        let thn = parts[1];
+
+        const bulanMap = {
+          'JUNI': 'JUNI',
+          'JULI': 'JULI',
+          'AGUST': 'AGUSTUS',
+          'AGUS': 'AGUSTUS',
+          'SEPT': 'SEPTEMBER',
+          'OKT': 'OKTOBER',
+          'NOV': 'NOVEMBER',
+          'DES': 'DESEMBER',
+          'JAN': 'JANUARI',
+          'FEB': 'FEBRUARI',
+          'MAR': 'MARET',
+          'APR': 'APRIL',
+          'MEI': 'MEI'
+        };
+
+        let blnUpper = bln.toUpperCase();
+        let blnFull = bulanMap[blnUpper] || blnUpper;
+
+        if (thn.length === 2 && !isNaN(thn)) {
+          thn = '20' + thn;
+        }
+
+        return `${blnFull} ${thn}`;
+      }
+
+      return sheetName.toUpperCase();
+    }
+
+    function handleLogoUpload(e) {
+      const file = e.target.files[0];
+      if (!file) {
+        uploadedLogoUrl = "";
+        renderPreview(parsedRows);
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        uploadedLogoUrl = event.target.result;
+        renderPreview(parsedRows);
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function handleFileUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        const data = new Uint8Array(event.target.result);
+        globalWorkbook = XLSX.read(data, { type: 'array' });
+
+        const sheetSelect = document.getElementById('sheetSelect');
+        sheetSelect.innerHTML = '';
+
+        globalWorkbook.SheetNames.forEach(sheetName => {
+          const opt = document.createElement('option');
+          opt.value = sheetName;
+          opt.textContent = sheetName;
+          sheetSelect.appendChild(opt);
+        });
+
+        sheetSelect.disabled = false;
+        processSheet();
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    function processSheet() {
+      if (!globalWorkbook) return;
+
+      currentSheetName = document.getElementById('sheetSelect').value;
+      const worksheet = globalWorkbook.Sheets[currentSheetName];
+
+      const rawData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
+
+      if (rawData.length < 5) {
+        alert('Format sheet tidak sesuai (minimal harus ada header di baris ke-5).');
+        return;
+      }
+
+      const headers = rawData[4].map(h => String(h).trim());
+
+      const idxNama = headers.findIndex(h => h.toLowerCase().includes('nama'));
+      
+      let idxJumlahList = [];
+      headers.forEach((h, idx) => {
+        if (h.toLowerCase().startsWith('jumlah')) {
+          idxJumlahList.push(idx);
+        }
+      });
+
+      const idxJumlahA = idxJumlahList[0] || -1;
+      const idxJumlahB = idxJumlahList[1] || -1;
+      const idxDiterima = headers.findIndex(h => h.toLowerCase().includes('diterima'));
+
+      let colsA = [];
+      let colsB = [];
+
+      headers.forEach((h, idx) => {
+        const hLower = h.toLowerCase();
+        // Abaikan kolom non-nominal seperti No, Jml Jam, Jumlah, dan Tanda Tangan
+        if (!h || hLower === 'no' || hLower === 'jml jam' || hLower === 'jumlah jam' || hLower.startsWith('jml jam') || hLower.startsWith('jumlah jam') || idx === idxNama || idx === idxJumlahA || idx === idxJumlahB || idx === idxDiterima || hLower.includes('tanda tangan')) {
+          return;
+        }
+
+        // SEMUA KOLOM DI ANTARA JUMLAH A DAN JUMLAH B ADALAH TAGIHAN (Ternasuk K.bln.lalu/Wifi/jaminan/jln sehat)
+        if (idx > idxNama && idx < idxJumlahA) {
+          colsA.push({ index: idx, name: h });
+        } else if (idx > idxJumlahA && idx < idxJumlahB) {
+          colsB.push({ index: idx, name: h });
+        }
+      });
+
+      parsedRows = [];
+      const dataRows = rawData.slice(5);
+
+      dataRows.forEach((row, rowIdx) => {
+        const nama = row[idxNama];
+        if (!nama || String(nama).trim() === '') return;
+
+        let itemsA = [];
+        let totalA = 0;
+        colsA.forEach(c => {
+          const val = cleanNumber(row[c.index]);
+          if (val > 0) {
+            itemsA.push({ label: c.name, val: Math.round(val) });
+            totalA += val;
+          }
+        });
+
+        let itemsB = [];
+        let totalB = 0;
+        colsB.forEach(c => {
+          const val = cleanNumber(row[c.index]);
+          if (val > 0) {
+            itemsB.push({ label: c.name, val: Math.round(val) });
+            totalB += val;
+          }
+        });
+
+        totalA = Math.round(totalA);
+        totalB = Math.round(totalB);
+        const totalBersihHitung = totalA - totalB;
+        
+        const excelTotalA = idxJumlahA !== -1 ? Math.round(cleanNumber(row[idxJumlahA])) : totalA;
+        const excelTotalB = idxJumlahB !== -1 ? Math.round(cleanNumber(row[idxJumlahB])) : totalB;
+        const excelDiterima = idxDiterima !== -1 ? Math.round(cleanNumber(row[idxDiterima])) : totalBersihHitung;
+
+        parsedRows.push({
+          rowNum: rowIdx + 6,
+          nama: String(nama).trim(),
+          itemsA,
+          totalA,
+          itemsB,
+          totalB,
+          totalBersih: totalBersihHitung,
+          excelTotalA,
+          excelTotalB,
+          excelDiterima
+        });
+      });
+
+      const personSelect = document.getElementById('personSelect');
+      personSelect.innerHTML = '<option value="ALL">-- Tampilkan Semua Guru & Tendik --</option>';
+      parsedRows.forEach((p, idx) => {
+        const opt = document.createElement('option');
+        opt.value = idx;
+        opt.textContent = `${p.nama}`;
+        personSelect.appendChild(opt);
+      });
+      personSelect.disabled = false;
+
+      renderPreview(parsedRows);
+    }
+
+    
+    function sanitizeLabel(label) {
+      if (!label) return '';
+      // Hapus jika di header excel sudah ada penomoran seperti "1." atau "1. " di depan nama kolom
+      return String(label).replace(/^[0-9]+[\.\)\-]\s*/, '').trim();
+    }
+
+    function cleanNumber(val) {
+      if (val === null || val === undefined || val === '' || val === '-') return 0;
+      if (typeof val === 'number') return val;
+      
+      let s = String(val).trim();
+      let isNegative = false;
+      
+      if (s.includes('(') && s.includes(')')) {
+        isNegative = true;
+      } else if (s.includes('-')) {
+        isNegative = true;
+      }
+      
+      let digits = s.replace(/[^0-9]/g, '');
+      if (!digits) return 0;
+      
+      let num = parseFloat(digits);
+      return isNegative ? -num : num;
+    }
+
+    function filterPerson() {
+      const selectedIndex = document.getElementById('personSelect').value;
+      if (selectedIndex === 'ALL') {
+        renderPreview(parsedRows);
+      } else {
+        renderPreview([parsedRows[selectedIndex]]);
+      }
+    }
+
+    function renderPreview(dataList) {
+      const container = document.getElementById('previewArea');
+      const warningContainer = document.getElementById('warningContainer');
+      container.innerHTML = '';
+      warningContainer.innerHTML = '';
+
+      let warnings = [];
+
+      dataList.forEach(p => {
+        if (p.totalA !== p.excelTotalA && p.excelTotalA !== 0) {
+          warnings.push(`<b>${p.nama}</b> (Baris ${p.rowNum}): Total Bisyaroh di Excel (Rp ${p.excelTotalA.toLocaleString('id-ID')}) BEDA dengan hasil penjumlahan rincian (Rp ${p.totalA.toLocaleString('id-ID')}).`);
+        }
+        if (p.totalB !== p.excelTotalB && p.excelTotalB !== 0) {
+          warnings.push(`<b>${p.nama}</b> (Baris ${p.rowNum}): Total Tagihan di Excel (Rp ${p.excelTotalB.toLocaleString('id-ID')}) BEDA dengan hasil penjumlahan rincian (Rp ${p.totalB.toLocaleString('id-ID')}).`);
+        }
+        if (p.totalBersih !== p.excelDiterima && p.excelDiterima !== 0) {
+          warnings.push(`<b>${p.nama}</b> (Baris ${p.rowNum}): Jumlah yang Diterima di Excel (Rp ${p.excelDiterima.toLocaleString('id-ID')}) BEDA dengan hasil hitung A - B (Rp ${p.totalBersih.toLocaleString('id-ID')}).`);
+        }
+      });
+
+      if (warnings.length > 0) {
+        warningContainer.innerHTML = `
+          <div class="alert-box">
+            <strong>⚠️ Ditemukan Kesalahan Rumus / Ketik di Excel:</strong>
+            <ul>${warnings.map(w => `<li>${w}</li>`).join('')}</ul>
+          </div>
+        `;
+      }
+
+      if (!dataList || dataList.length === 0) {
+        container.innerHTML = '<div class="no-print">Tidak ada data untuk ditampilkan.</div>';
+        return;
+      }
+
+      let displayBulan = formatNamaBulan(currentSheetName);
+
+      dataList.forEach(p => {
+        const logoImgHtml = uploadedLogoUrl ? `<img src="${uploadedLogoUrl}" class="kop-logo" alt="Logo">` : '';
+
+        const html = `
+          <div class="envelope-card">
+            <div>
+              <div class="kop-container">
+                ${logoImgHtml}
+                <div class="kop-text">
+                  BISYAROH GURU DAN TENAGA KEPENDIDIKAN<br>
+                  MTS. TARBIYATUL BANIN BANAT ALASDOWO<br>
+                  BULAN ${displayBulan}
+                </div>
+              </div>
+
+              <div class="nama-bar">Nama : ${p.nama}</div>
+
+              <div class="grid-container">
+                <!-- KOLOM A -->
+                <div class="col">
+                  <div class="col-content">
+                    <span class="col-title">A. BISYAROH</span>
+                    ${p.itemsA.map((item, idx) => `
+                      <div class="item-row">
+                        <span>${idx + 1}.&nbsp;${sanitizeLabel(item.label)}</span>
+                        <span>Rp ${item.val.toLocaleString('id-ID')}</span>
+                      </div>
+                    `).join('')}
+                  </div>
+                  <div class="subtotal-row">
+                    <span>JUMLAH A</span>
+                    <span>Rp ${p.totalA.toLocaleString('id-ID')}</span>
+                  </div>
+                </div>
+
+                <!-- KOLOM B -->
+                <div class="col">
+                  <div class="col-content">
+                    <span class="col-title">B. TAGIHAN</span>
+                    ${p.itemsB.map((item, idx) => `
+                      <div class="item-row">
+                        <span>${idx + 1}.&nbsp;${sanitizeLabel(item.label)}</span>
+                        <span>Rp ${item.val.toLocaleString('id-ID')}</span>
+                      </div>
+                    `).join('')}
+                  </div>
+                  <div class="subtotal-row">
+                    <span>JUMLAH B</span>
+                    <span>Rp ${p.totalB.toLocaleString('id-ID')}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- BAGIAN BAWAH -->
+            <div class="bottom-section">
+              <div class="total-row">
+                <span>JUMLAH DITERIMA (A - B) :</span>
+                <span>Rp ${p.totalBersih.toLocaleString('id-ID')}</span>
+              </div>
+
+              <div class="ttd-box">
+                Alasdowo, 30 Mei 2027<br>
+                Bendahara
+                <div class="ttd-space">
+                  <img src="https://lh3.googleusercontent.com/d/1jqhPPf5kJZXEObZSr57IXOsy0_krxd1c" style="max-height: 38px; margin-top: 2px;" alt="TTD">
+                </div>
+                <b>Mu'linatussa'adah</b>
+              </div>
+            </div>
+          </div>
+        `;
+
+        container.innerHTML += html;
+      });
+    }
+  </script>
+</body>
+</html>
