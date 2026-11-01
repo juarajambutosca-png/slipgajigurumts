@@ -1,522 +1,267 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Aplikasi Slip Bisyaroh Amplop Landscape (152 x 95 mm)</title>
-  <!-- Library SheetJS untuk membaca file Excel -->
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <style>
-    :root {
-      --primary: #0f172a;
-      --accent: #16a34a;
-      --bg: #f1f5f9;
-      --card-bg: #ffffff;
-      --text: #1e293b;
-      --danger: #dc2626;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Slip Bisyaroh Amplop (152 x 95 mm)</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+  :root { --primary:#0f172a; --accent:#16a34a; --bg:#f1f5f9; --text:#1e293b; --danger:#dc2626; }
+  * { box-sizing: border-box; }
+  body { font-family:'Segoe UI',Arial,sans-serif; background:var(--bg); margin:0; color:var(--text); }
+  .top-bar { background:var(--primary); color:#fff; padding:12px 20px; text-align:center; font-size:16px; font-weight:700; }
+  .control-panel { background:#fff; max-width:950px; margin:15px auto; padding:15px 20px; border-radius:8px;
+    box-shadow:0 2px 10px rgba(0,0,0,.06); display:flex; gap:15px; align-items:flex-end; flex-wrap:wrap; }
+  .form-group { display:flex; flex-direction:column; gap:4px; }
+  .form-group label { font-size:11px; font-weight:700; color:#64748b; }
+  select, input[type=file], input[type=text] { padding:8px 10px; border:1px solid #cbd5e1; border-radius:6px; font-size:12px; background:#f8fafc; }
+  input[type=text] { min-width:220px; }
+  .btn-print { background:var(--accent); color:#fff; border:none; padding:10px 20px; font-weight:700; border-radius:6px;
+    cursor:pointer; margin-left:auto; font-size:13px; }
+  .btn-print:hover { background:#15803d; }
+  #warningContainer { max-width:950px; margin:0 auto 15px; }
+  .alert-box { background:#fef2f2; border-left:4px solid var(--danger); padding:12px 16px; border-radius:6px; color:#991b1b; font-size:12px; margin-bottom:8px; }
+  .alert-box.info { background:#fffbeb; border-left-color:#d97706; color:#92400e; }
+  .alert-box ul { margin:4px 0 0 18px; padding:0; }
+  #previewArea { display:flex; flex-direction:column; align-items:center; gap:20px; padding-bottom:50px; }
+  .empty { color:#64748b; margin-top:50px; font-size:14px; }
 
-    * { box-sizing: border-box; }
+  /* Kartu amplop 152 x 95 mm */
+  .envelope-card { width:152mm; height:95mm; background:#fff; padding:5mm 6mm; border:1px solid #cbd5e1;
+    box-shadow:0 4px 15px rgba(0,0,0,.1); display:flex; flex-direction:column; overflow:hidden; color:#000; }
+  .kop { display:flex; align-items:center; justify-content:center; gap:8px; border-bottom:2px solid #000; padding-bottom:3px; margin-bottom:4px; }
+  .kop img { max-height:12mm; max-width:12mm; object-fit:contain; }
+  .kop-text { text-align:center; font-weight:800; font-size:8.5pt; line-height:1.2; text-transform:uppercase; flex-grow:1; }
+  .nama-bar { font-weight:700; font-size:9.5pt; margin-bottom:4px; }
+  .grid { display:flex; justify-content:space-between; gap:4mm; border-top:1px solid #000; border-bottom:1px solid #000; padding:4px 0; font-size:8.5pt; flex:1; min-height:0; }
+  .col { width:50%; display:flex; flex-direction:column; justify-content:space-between; }
+  .col-title { font-weight:700; margin-bottom:4px; border-bottom:1px dashed #888; padding-bottom:2px; }
+  .item { display:flex; justify-content:space-between; gap:6px; margin-bottom:2px; line-height:1.2; }
+  .item span:last-child { white-space:nowrap; }
+  .sub { display:flex; justify-content:space-between; font-weight:700; border-top:1px dashed #000; padding-top:3px; margin-top:3px; }
+  .dense .grid { font-size:7.5pt; } .dense .item { margin-bottom:1px; line-height:1.15; }
+  .bottom { display:flex; justify-content:space-between; align-items:flex-end; margin-top:4px; }
+  .total { font-weight:700; font-size:9.5pt; background:#f8fafc; padding:5px 8px; border:1px solid #94a3b8; display:flex; gap:10px; }
+  .total.neg { color:#b91c1c; }
+  .ttd { font-size:8pt; line-height:1.2; width:48mm; }
+  .ttd-space { height:20px; }
 
-    body {
-      font-family: 'Segoe UI', Arial, sans-serif;
-      background-color: var(--bg);
-      margin: 0;
-      padding: 0;
-      color: var(--text);
-    }
-
-    .top-bar {
-      background: var(--primary);
-      color: white;
-      padding: 12px 20px;
-      text-align: center;
-      font-size: 16px;
-      font-weight: bold;
-    }
-
-    .control-panel {
-      background: white;
-      max-width: 950px;
-      margin: 15px auto;
-      padding: 15px 20px;
-      border-radius: 8px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.06);
-      display: flex;
-      gap: 15px;
-      align-items: center;
-      flex-wrap: wrap;
-    }
-
-    .form-group {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-
-    .form-group label {
-      font-size: 11px;
-      font-weight: 700;
-      color: #64748b;
-      text-transform: uppercase;
-    }
-
-    select, input[type="file"], input[type="text"] {
-      padding: 8px 10px;
-      border: 1px solid #cbd5e1;
-      border-radius: 6px;
-      font-size: 12px;
-      background: #f8fafc;
-    }
-
-    .btn-print {
-      background-color: var(--accent);
-      color: white;
-      border: none;
-      padding: 10px 20px;
-      font-weight: bold;
-      border-radius: 6px;
-      cursor: pointer;
-      margin-left: auto;
-      font-size: 13px;
-    }
-
-    .btn-print:hover {
-      background-color: #15803d;
-    }
-
-    #warningContainer {
-      max-width: 950px;
-      margin: 0 auto 15px;
-    }
-
-    .alert-box {
-      background: #fef2f2;
-      border-left: 4px solid var(--danger);
-      padding: 12px 16px;
-      border-radius: 6px;
-      color: #991b1b;
-      font-size: 12px;
-    }
-
-    .alert-box ul {
-      margin: 4px 0 0 18px;
-      padding: 0;
-    }
-
-    #previewArea {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 20px;
-      padding-bottom: 50px;
-    }
-
-    /* KARTU AMPLOP LANDSCAPE 152mm x 95mm PRESI */
-    .envelope-card {
-      width: 152mm;
-      height: 95mm;
-      background: var(--card-bg);
-      padding: 6mm 7mm;
-      border-radius: 4px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-      border: 1px solid #cbd5e1;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      position: relative;
-    }
-
-    .kop-container {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      border-bottom: 2px solid #000;
-      padding-bottom: 4px;
-      margin-bottom: 6px;
-    }
-
-    .kop-logo {
-      max-height: 12mm;
-      max-width: 12mm;
-      object-fit: contain;
-    }
-
-    .kop-text {
-      text-align: center;
-      font-weight: 800;
-      font-size: 9.5pt;
-      line-height: 1.2;
-      text-transform: uppercase;
-      flex-grow: 1;
-    }
-
-    .nama-bar {
-      font-weight: 700;
-      font-size: 9.5pt;
-      margin-bottom: 6px;
-    }
-
-    /* CONTAINER GRID RINCIAN */
-    .grid-container {
-      display: flex;
-      justify-content: space-between;
-      border-top: 1px solid #000;
-      border-bottom: 1px solid #000;
-      padding: 6px 0;
-      font-size: 8.5pt;
-      flex-grow: 1;
-    }
-
-    .col {
-      width: 48%;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-    }
-
-    .col-content {
-      width: 100%;
-    }
-
-    .col-title {
-      font-weight: bold;
-      margin-bottom: 5px;
-      display: block;
-      border-bottom: 1px dashed #aaa;
-      padding-bottom: 2px;
-    }
-
-    .item-row {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 4px;
-      line-height: 1.25;
-    }
-
-    .subtotal-row {
-      display: flex;
-      justify-content: space-between;
-      font-weight: bold;
-      border-top: 1px dashed #000;
-      padding-top: 4px;
-      margin-top: 4px;
-    }
-
-    .bottom-section {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-end;
-      margin-top: 6px;
-    }
-
-    .total-row {
-      font-weight: bold;
-      font-size: 9.5pt;
-      background: #f8fafc;
-      padding: 5px 8px;
-      border: 1px solid #cbd5e1;
-      display: flex;
-      gap: 10px;
-    }
-
-    /* MARGIN TANDA TANGAN RAPI & SEIMBANG */
-    .ttd-box {
-      text-align: left;
-      font-size: 8.5pt;
-      line-height: 1.25;
-      width: 42mm;
-    }
-
-    .ttd-space {
-      height: 28px;
-    }
-
-    /* PENGATURAN CETAK LANDSCAPE PAS AMPLOP */
-    @media print {
-      .no-print {
-        display: none !important;
-      }
-      body {
-        background: white;
-        margin: 0;
-      }
-      #previewArea {
-        padding: 0;
-        gap: 0;
-      }
-      .envelope-card {
-        width: 152mm;
-        height: 95mm;
-        box-shadow: none;
-        border: none;
-        border-radius: 0;
-        padding: 5mm 6mm;
-        page-break-after: always;
-        page-break-inside: avoid;
-      }
-      @page {
-        size: 152mm 95mm landscape;
-        margin: 0;
-      }
-    }
-  </style>
+  @media print {
+    .no-print { display:none !important; }
+    body { background:#fff; margin:0; }
+    #previewArea { padding:0; gap:0; display:block; }
+    .envelope-card { box-shadow:none; border:none; padding:5mm 6mm; page-break-after:always; break-after:page; page-break-inside:avoid; }
+    @page { size:152mm 95mm; margin:0; }
+  }
+</style>
 </head>
 <body>
 
-  <div class="top-bar no-print">
-    Generator Slip Bisyaroh Amplop Landscape (152 x 95 mm)
+<div class="top-bar no-print">Generator Slip Bisyaroh Amplop (152 x 95 mm)</div>
+
+<div class="control-panel no-print">
+  <div class="form-group">
+    <label>1. Upload Excel</label>
+    <input type="file" id="excelFile" accept=".xlsx,.xls">
   </div>
-
-  <div class="control-panel no-print">
-    <div class="form-group">
-      <label>1. Upload Excel:</label>
-      <input type="file" id="excelFile" accept=".xlsx, .xls" />
-    </div>
-
-    <div class="form-group">
-      <label>2. Tanggal Slip (di atas Bendahara):</label>
-      <input type="text" id="tglInput" value="Alasdowo, 30 Mei 2027" placeholder="contoh: Alasdowo, 30 Mei 2027" oninput="renderPreview(parsedRows)" />
-    </div>
-
-    <div class="form-group">
-      <label>3. Pilih Bulan / Sheet:</label>
-      <select id="sheetSelect" disabled onchange="processSheet()">
-        <option value="">-- Upload Excel Dulu --</option>
-      </select>
-    </div>
-
-    <div class="form-group">
-      <label>4. Filter Guru / Tendik:</label>
-      <select id="personSelect" disabled onchange="filterPerson()">
-        <option value="ALL">-- Tampilkan Semua --</option>
-      </select>
-    </div>
-
-    <button class="btn-print" onclick="window.print()">Cetak / Save PDF</button>
+  <div class="form-group">
+    <label>2. Pilih bulan / sheet</label>
+    <select id="sheetSelect" disabled><option>-- Upload Excel dulu --</option></select>
   </div>
-
-  <div id="warningContainer" class="no-print"></div>
-
-  <div id="previewArea">
-    <div class="no-print" style="color: #64748b; margin-top: 50px; font-size: 14px;">
-      Silakan upload file Excel <b>Bisyaroh Guru dan Tendik</b> untuk melihat preview.
-    </div>
+  <div class="form-group">
+    <label>3. Tanggal slip (di atas Bendahara)</label>
+    <input type="text" id="tglInput" placeholder="Alasdowo, 31 Oktober 2026">
   </div>
+  <div class="form-group">
+    <label>4. Filter guru / tendik</label>
+    <select id="personSelect" disabled><option value="ALL">-- Tampilkan semua --</option></select>
+  </div>
+  <button class="btn-print" onclick="window.print()">Cetak / Simpan PDF</button>
+</div>
 
-  <script>
-    let globalWorkbook = null;
-    let parsedRows = [];
-    let currentSheetName = "";
-    let uploadedLogoUrl = "https://lh3.googleusercontent.com/d/1ypnFZQcbp4tlOQUHNFvoS4PJuC1a6ctW";
+<div id="warningContainer" class="no-print"></div>
+<div id="previewArea"><div class="empty no-print">Upload file Excel <b>Bisyaroh Guru dan Tendik</b> untuk melihat preview.</div></div>
 
-    document.getElementById('excelFile').addEventListener('change', handleFileUpload, false);
-    // logoFile listener removed
+<script>
+const LOGO_URL = "https://lh3.googleusercontent.com/d/1ypnFZQcbp4tlOQUHNFvoS4PJuC1a6ctW";
+const BENDAHARA = "MU'LINATUSSA'ADAH";
+const BULAN = ['JANUARI','FEBRUARI','MARET','APRIL','MEI','JUNI','JULI','AGUSTUS','SEPTEMBER','OKTOBER','NOVEMBER','DESEMBER'];
+// singkatan nama sheet -> indeks bulan (cadangan jika sel "Bulan:" tidak ada)
+const SINGKATAN = { JAN:0, FEB:1, MAR:2, APR:3, MEI:4, JUN:5, JUL:6, AGU:7, SEP:8, OKT:9, NOV:10, NOP:10, DES:11 };
 
-    function formatNamaBulan(sheetName) {
-      if (!sheetName) return "";
-      let s = sheetName.trim();
-      
-      s = s.replace(/\./g, ' ');
-      let parts = s.split(/\s+/);
-      
-      if (parts.length >= 2) {
-        let bln = parts[0];
-        let thn = parts[1];
+let workbook = null, rows = [], bulanLabel = '', tglManual = false;
 
-        const bulanMap = {
-          'JUNI': 'JUNI',
-          'JULI': 'JULI',
-          'AGUST': 'AGUSTUS',
-          'AGUS': 'AGUSTUS',
-          'SEPT': 'SEPTEMBER',
-          'OKT': 'OKTOBER',
-          'NOV': 'NOVEMBER',
-          'DES': 'DESEMBER',
-          'JAN': 'JANUARI',
-          'FEB': 'FEBRUARI',
-          'MAR': 'MARET',
-          'APR': 'APRIL',
-          'MEI': 'MEI'
-        };
+const $ = id => document.getElementById(id);
+$('excelFile').addEventListener('change', onFile);
+$('sheetSelect').addEventListener('change', processSheet);
+$('personSelect').addEventListener('change', render);
+$('tglInput').addEventListener('input', () => { tglManual = true; render(); });
 
-        let blnUpper = bln.toUpperCase();
-        let blnFull = bulanMap[blnUpper] || blnUpper;
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const rp = n => (n < 0 ? '-' : '') + 'Rp ' + Math.abs(Math.round(n)).toLocaleString('id-ID');
+const cap = s => s.charAt(0) + s.slice(1).toLowerCase();
 
-        if (thn.length === 2 && !isNaN(thn)) {
-          thn = '20' + thn;
-        }
+function cleanNumber(v) {
+  if (v === null || v === undefined || v === '' || v === '-') return 0;
+  if (typeof v === 'number') return v;
+  const s = String(v).trim();
+  const digits = s.replace(/[^0-9]/g, '');
+  if (!digits) return 0;
+  const neg = s.includes('-') || (s.includes('(') && s.includes(')'));
+  return neg ? -parseFloat(digits) : parseFloat(digits);
+}
 
-        return `${blnFull} ${thn}`;
-      }
+function sanitizeLabel(l) { return String(l || '').replace(/^[0-9]+[.)\-]\s*/, '').replace(/\s+/g, ' ').trim(); }
 
-      return sheetName.toUpperCase();
+// Ambil "Oktober 2026" dari sel "Bulan: Oktober 2026"; cadangan: tebak dari nama sheet
+function getBulan(ws, sheetName) {
+  const raw = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+  for (let i = 0; i < Math.min(8, raw.length); i++) {
+    for (const c of raw[i]) {
+      const m = String(c).match(/bulan\s*:\s*(.+)/i);
+      if (m) return m[1].replace(/\s+/g, ' ').trim().toUpperCase();
     }
+  }
+  const parts = sheetName.replace(/\./g, ' ').trim().split(/\s+/);
+  const key = (parts[0] || '').toUpperCase().slice(0, 3);
+  let thn = parts[1] || '';
+  if (/^\d{2}$/.test(thn)) thn = '20' + thn;
+  return key in SINGKATAN ? `${BULAN[SINGKATAN[key]]} ${thn}`.trim() : sheetName.toUpperCase();
+}
 
-    function handleFileUpload(e) {
-      const file = e.target.files[0];
-      if (!file) return;
+// "OKTOBER 2026" -> "Alasdowo, 30 Oktober 2026"
+function tglDefault(label) {
+  const m = label.match(/^([A-Z]+)\s+(\d{4})$/);
+  if (!m) return 'Alasdowo, ';
+  const idx = BULAN.indexOf(m[1]);
+  if (idx < 0) return 'Alasdowo, ';
+  const hari = Math.min(30, new Date(+m[2], idx + 1, 0).getDate());
+  return `Alasdowo, ${hari} ${cap(m[1])} ${m[2]}`;
+}
 
-      const reader = new FileReader();
-      reader.onload = function(event) {
-        const data = new Uint8Array(event.target.result);
-        globalWorkbook = XLSX.read(data, { type: 'array' });
+function onFile(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    workbook = XLSX.read(new Uint8Array(ev.target.result), { type: 'array' });
+    const sel = $('sheetSelect');
+    sel.innerHTML = '';
+    workbook.SheetNames.forEach(n => sel.add(new Option(n, n)));
+    // pilih sheet terakhir (bulan terbaru) secara bawaan
+    sel.value = workbook.SheetNames[workbook.SheetNames.length - 1];
+    sel.disabled = false;
+    tglManual = false;
+    processSheet();
+  };
+  reader.readAsArrayBuffer(file);
+}
 
-        const sheetSelect = document.getElementById('sheetSelect');
-        sheetSelect.innerHTML = '';
+function processSheet() {
+  if (!workbook) return;
+  const name = $('sheetSelect').value;
+  const ws = workbook.Sheets[name];
+  const raw = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
 
-        globalWorkbook.SheetNames.forEach(sheetName => {
-          const opt = document.createElement('option');
-          opt.value = sheetName;
-          opt.textContent = sheetName;
-          sheetSelect.appendChild(opt);
-        });
+  // cari baris header (yang memuat "nama" dan "diterima")
+  const hRow = raw.findIndex(r => r.some(c => /nama/i.test(c)) && r.some(c => /diterima/i.test(c)));
+  if (hRow < 0) { alert('Header tidak ditemukan (harus ada kolom "Nama" dan "Jumlah yang diterima").'); return; }
 
-        sheetSelect.disabled = false;
-        processSheet();
-      };
-      reader.readAsArrayBuffer(file);
-    }
+  bulanLabel = getBulan(ws, name);
+  if (!tglManual) $('tglInput').value = tglDefault(bulanLabel);
 
-    function processSheet() {
-      if (!globalWorkbook) return;
+  const h = raw[hRow].map(x => String(x).trim());
+  const low = h.map(x => x.toLowerCase());
+  const iNama = low.findIndex(x => x.includes('nama'));
+  const iTerima = low.findIndex(x => x.includes('diterima'));
+  const iJml = [];
+  low.forEach((x, i) => { if (x.startsWith('jumlah') && !x.includes('diterima') && !x.includes('jam')) iJml.push(i); });
+  if (iJml.length < 2) { alert('Kolom "Jumlah" (penerimaan dan potongan) tidak lengkap.'); return; }
+  const [iA, iB] = iJml;
 
-      currentSheetName = document.getElementById('sheetSelect').value;
-      const worksheet = globalWorkbook.Sheets[currentSheetName];
+  const skip = i => !h[i] || low[i] === 'no' || low[i] === 'no.' || low[i].startsWith('jml jam') || low[i].includes('tanda tangan');
+  const colsA = [], colsB = [];
+  h.forEach((x, i) => {
+    if (skip(i)) return;
+    if (i > iNama && i < iA) colsA.push({ i, name: sanitizeLabel(x) });
+    else if (i > iA && i < iB) colsB.push({ i, name: sanitizeLabel(x) });
+  });
 
-      const rawData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
+  rows = [];
+  raw.slice(hRow + 1).forEach((r, k) => {
+    const nama = String(r[iNama] ?? '').trim();
+    if (!nama || /^(jumlah|total)$/i.test(nama)) return;   // lewati baris kosong & baris total
+    const pick = cols => cols.map(c => ({ label: c.name, val: Math.round(cleanNumber(r[c.i])) })).filter(x => x.val > 0);
+    const itemsA = pick(colsA), itemsB = pick(colsB);
+    const totalA = itemsA.reduce((s, x) => s + x.val, 0);
+    const totalB = itemsB.reduce((s, x) => s + x.val, 0);
+    rows.push({
+      baris: hRow + k + 2, nama, itemsA, itemsB, totalA, totalB, net: totalA - totalB,
+      xlA: Math.round(cleanNumber(r[iA])), xlB: Math.round(cleanNumber(r[iB])), xlNet: Math.round(cleanNumber(r[iTerima]))
+    });
+  });
 
-      if (rawData.length < 5) {
-        alert('Format sheet tidak sesuai (minimal harus ada header di baris ke-5).');
-        return;
-      }
+  const ps = $('personSelect');
+  ps.innerHTML = '<option value="ALL">-- Tampilkan semua --</option>';
+  rows.forEach((p, i) => ps.add(new Option(p.nama, i)));
+  ps.disabled = false;
+  checkWarnings();
+  render();
+}
 
-      const headers = rawData[4].map(h => String(h).trim());
+function checkWarnings() {
+  const box = $('warningContainer');
+  const beda = rows.filter(p => p.totalA !== p.xlA || p.totalB !== p.xlB || p.net !== p.xlNet);
+  const minus = rows.filter(p => p.net < 0);
+  let html = '';
+  if (beda.length) {
+    html += `<div class="alert-box"><b>Hitungan tidak sama dengan Excel (${beda.length} orang):</b><ul>` +
+      beda.map(p => `<li>Baris ${p.baris}, ${esc(p.nama)}: aplikasi ${rp(p.net)}, Excel ${rp(p.xlNet)}</li>`).join('') + '</ul></div>';
+  }
+  if (minus.length) {
+    html += `<div class="alert-box info"><b>Jumlah diterima minus (${minus.length} orang):</b><ul>` +
+      minus.map(p => `<li>${esc(p.nama)}: ${rp(p.net)}</li>`).join('') + '</ul></div>';
+  }
+  box.innerHTML = html;
+}
 
-      const idxNama = headers.findIndex(h => h.toLowerCase().includes('nama'));
-      
-      let idxJumlahList = [];
-      headers.forEach((h, idx) => {
-        if (h.toLowerCase().startsWith('jumlah')) {
-          idxJumlahList.push(idx);
-        }
-      });
+function cardHTML(p) {
+  const dense = Math.max(p.itemsA.length, p.itemsB.length) > 6 ? ' dense' : '';
+  const list = items => items.length
+    ? items.map(x => `<div class="item"><span>${esc(x.label)}</span><span>${rp(x.val)}</span></div>`).join('')
+    : '<div class="item"><span>-</span><span></span></div>';
+  return `
+  <div class="envelope-card${dense}">
+    <div class="kop">
+      <img src="${LOGO_URL}" alt="" onerror="this.style.display='none'">
+      <div class="kop-text">Bisyaroh Guru dan Tenaga Kependidikan<br>MTs. Tarbiyatul Banin Banat Alasdowo<br>${esc(bulanLabel)}</div>
+    </div>
+    <div class="nama-bar">Nama: ${esc(p.nama)}</div>
+    <div class="grid">
+      <div class="col"><div>
+        <div class="col-title">A. Penerimaan</div>${list(p.itemsA)}</div>
+        <div class="sub"><span>Jumlah A</span><span>${rp(p.totalA)}</span></div>
+      </div>
+      <div class="col"><div>
+        <div class="col-title">B. Potongan</div>${list(p.itemsB)}</div>
+        <div class="sub"><span>Jumlah B</span><span>${rp(p.totalB)}</span></div>
+      </div>
+    </div>
+    <div class="bottom">
+      <div class="total${p.net < 0 ? ' neg' : ''}"><span>Diterima (A - B)</span><span>${rp(p.net)}</span></div>
+      <div class="ttd">${esc($('tglInput').value.trim())}<br>Bendahara
+        <div class="ttd-space"></div><b>${esc(BENDAHARA)}</b></div>
+    </div>
+  </div>`;
+}
 
-      const idxJumlahA = idxJumlahList[0] || -1;
-      const idxJumlahB = idxJumlahList[1] || -1;
-      const idxDiterima = headers.findIndex(h => h.toLowerCase().includes('diterima'));
-
-      let colsA = [];
-      let colsB = [];
-
-      headers.forEach((h, idx) => {
-        const hLower = h.toLowerCase();
-        // Abaikan kolom non-nominal seperti No, Jml Jam, Jumlah, dan Tanda Tangan
-        if (!h || hLower === 'no' || hLower === 'jml jam' || hLower === 'jumlah jam' || hLower.startsWith('jml jam') || hLower.startsWith('jumlah jam') || idx === idxNama || idx === idxJumlahA || idx === idxJumlahB || idx === idxDiterima || hLower.includes('tanda tangan')) {
-          return;
-        }
-
-        // SEMUA KOLOM DI ANTARA JUMLAH A DAN JUMLAH B ADALAH TAGIHAN (Termasuk K.bln.lalu/Wifi/jaminan/jln sehat)
-        if (idx > idxNama && idx < idxJumlahA) {
-          colsA.push({ index: idx, name: h });
-        } else if (idx > idxJumlahA && idx < idxJumlahB) {
-          colsB.push({ index: idx, name: h });
-        }
-      });
-
-      parsedRows = [];
-      const dataRows = rawData.slice(5);
-
-      dataRows.forEach((row, rowIdx) => {
-        const nama = row[idxNama];
-        if (!nama || String(nama).trim() === '') return;
-
-        let itemsA = [];
-        let totalA = 0;
-        colsA.forEach(c => {
-          const val = cleanNumber(row[c.index]);
-          if (val > 0) {
-            itemsA.push({ label: c.name, val: Math.round(val) });
-            totalA += val;
-          }
-        });
-
-        let itemsB = [];
-        let totalB = 0;
-        colsB.forEach(c => {
-          const val = cleanNumber(row[c.index]);
-          if (val > 0) {
-            itemsB.push({ label: c.name, val: Math.round(val) });
-            totalB += val;
-          }
-        });
-
-        totalA = Math.round(totalA);
-        totalB = Math.round(totalB);
-        const totalBersihHitung = totalA - totalB;
-        
-        const excelTotalA = idxJumlahA !== -1 ? Math.round(cleanNumber(row[idxJumlahA])) : totalA;
-        const excelTotalB = idxJumlahB !== -1 ? Math.round(cleanNumber(row[idxJumlahB])) : totalB;
-        const excelDiterima = idxDiterima !== -1 ? Math.round(cleanNumber(row[idxDiterima])) : totalBersihHitung;
-
-        parsedRows.push({
-          rowNum: rowIdx + 6,
-          nama: String(nama).trim(),
-          itemsA,
-          totalA,
-          itemsB,
-          totalB,
-          totalBersih: totalBersihHitung,
-          excelTotalA,
-          excelTotalB,
-          excelDiterima
-        });
-      });
-
-      const personSelect = document.getElementById('personSelect');
-      personSelect.innerHTML = '<option value="ALL">-- Tampilkan Semua Guru & Tendik --</option>';
-      parsedRows.forEach((p, idx) => {
-        const opt = document.createElement('option');
-        opt.value = idx;
-        opt.textContent = `${p.nama}`;
-        personSelect.appendChild(opt);
-      });
-      personSelect.disabled = false;
-
-      renderPreview(parsedRows);
-    }
-
-    function getTglText() {
-      const inputVal = document.getElementById('tglInput') ? document.getElementById('tglInput').value.trim() : '';
-      return inputVal || 'Alasdowo, 30 Mei 2027';
-    }
-
-    function sanitizeLabel(label) {
-      if (!label) return '';
-      return String(label).replace(/^[0-9]+[\.\)\-]\s*/, '').trim();
-    }
-
-    function cleanNumber(val) {
-      if (val === null || val === undefined || val === '' || val === '-') return 0;
-      if (typeof val === 'number') return val;
-      
-      let s = String(val).trim();
-      let isNegative = false;
-      
-      if (s.includes('(') && s.includes(')')) {
-        isNegative = true;
-      } else if (s.includes('-')) {
-        isNegative = true;
-      }
-      
-      let digits = s.replace(/[^0-9]/g, '');
-      if (!digits) return 0;
-      
-      let num = parseFloat(digits);
-      return isNegative ? -num : num;
-    }
-
-    function filterPerson() {
-      const selectedIndex = document.getElementById('personSelect').value;
-      if (selectedIndex === 'ALL') {
+function render() {
+  const area = $('previewArea');
+  if (!rows.length) return;
+  const sel = $('personSelect').value;
+  const list = sel === 'ALL' ? rows : [rows[+sel]];
+  area.innerHTML = list.map(cardHTML).join('');
+}
+</script>
+</body>
+</html>
